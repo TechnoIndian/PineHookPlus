@@ -175,7 +175,12 @@ public class Hook {
 
     private static String getProcessName(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            return Application.getProcessName();
+            try {
+                Method getProcessNameMethod = Application.class.getMethod("getProcessName");
+                return (String) getProcessNameMethod.invoke(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         int pid = android.os.Process.myPid();

@@ -27,6 +27,7 @@
     public boolean yetAnotherMethod();
     public java.lang.String beforeOnlyMethod(java.lang.String);
     public java.lang.String afterOnlyMethod(java.lang.String);
+    public boolean detectVpn();
 }
 -keep class com.pinehook.plus.ConstructorClass {
     public <init>(boolean, java.lang.String, boolean, long, long, java.lang.String, java.lang.String, java.lang.String);
@@ -35,6 +36,7 @@
 # Keep the Hook class and its methods
 -keep class com.pinehook.plus.Hook {
     public static void doHook(java.util.Map);
+    public static void loadModules(android.content.Context);
 }
 
 # Keep the NativeLibLoader class and its methods
