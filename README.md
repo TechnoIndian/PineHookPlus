@@ -22,6 +22,7 @@ To learn more about its usage and demo, please refer to the [blog post](https://
 - No need to write or compile custom code for every method.
 - Directly hook into and modify class constructors.
 - Moves away from methods like `AppComponentFactory`, `android:name` and uses `ContentProvider`.
+- Load Xposed modules seamlessly.
 
 ---
 
@@ -37,6 +38,7 @@ PineHookPlus/
 |   |   |   |   ├── libarm.so            # ARM32 library
 |   |   |   |   ├── libarm64.so          # ARM64 library
 |   |   |   |   ├── config.json          # Hook configuration file
+|   |   |   |   ├── modules.txt          # Xposed modules configuration file
 │   │   ├── main/            # Main application source code
 │   │   └── ...              # Other modules and configurations
 │   ├── build.gradle         # Project-specific Gradle file
