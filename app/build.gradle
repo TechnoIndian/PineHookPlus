@@ -1,37 +1,36 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("com.android.application")
 }
 
 android {
     namespace = "com.pinehook.plus"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.pinehook.plus"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
-    tasks.whenTaskAdded {
-        if (name in listOf(
+    
+    tasks.whenTaskAdded { task ->
+        if (task.name in [
                 "mergeReleaseJniLibFolders",
                 "mergeReleaseNativeLibs",
                 "stripReleaseDebugSymbols",
                 "extractReleaseNativeSymbolTables",
                 "mergeReleaseNativeDebugMetadata"
-            )) {
-            enabled = false
+            ]) {
+            task.enabled = false
         }
     }
 
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            minifyEnabled = true
+            shrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -61,12 +60,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.pine)
-    implementation(libs.pine.exposed)
-
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
+    implementation('top.canyie.pine:core:0.3.0')
+    implementation('top.canyie.pine:xposed:0.2.0')
 }

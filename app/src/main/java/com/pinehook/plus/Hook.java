@@ -5,19 +5,19 @@ import top.canyie.pine.callback.MethodReplacement;
 import top.canyie.pine.callback.MethodHook;
 import top.canyie.pine.xposed.PineXposed;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import android.app.ActivityManager;
 import android.app.Application;
@@ -31,36 +31,60 @@ public class Hook {
     private static final String TAG = "Hook";
 
     public static void loadModules(Context context) {
-        String[] apkFiles = getApkFiles(context);
-        if (apkFiles.length == 0) {
-            Log.d(TAG, "No APK files found in resources, skipping module loading.");
-        } else {
-            for (String apkFile : apkFiles) {
-                String modulePath = extractApkToCache(context, "hook/" + apkFile, apkFile);
-                if (modulePath != null) {
-                    Log.d(TAG, "Loading module: " + modulePath);
-                    PineXposed.loadModule(new File(modulePath));
 
-                    try {
-                        String packageName = context.getPackageName();
-                        ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(packageName, 0);
-                        ClassLoader classLoader = context.getClassLoader();
-                        String processName = getProcessName(context);
+        final String prefix = "hook/modules/";
 
-                        if (processName == null) {
-                            Log.e(TAG, "Could not determine process name, aborting module load.");
-                            return;
+        try (ZipFile apk = new ZipFile(context.getPackageResourcePath())) {
+            Enumeration<? extends ZipEntry> entries = apk.entries();
+
+            while (entries.hasMoreElements()) {
+                String name = entries.nextElement().getName();
+
+                if (name.startsWith(prefix) && name.endsWith(".apk")) {
+
+                    String apkFile = name.substring(prefix.length());
+
+                    if (apkFile.contains("/")) continue;
+
+                    String modulePath = extractApkToCache(
+                            context,
+                            prefix + apkFile,
+                            apkFile
+                    );
+
+                    if (modulePath != null) {
+                        Log.d(TAG, "Loading module: " + modulePath);
+                        PineXposed.loadModule(new File(modulePath));
+
+                        try {
+                            String packageName = context.getPackageName();
+                            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(packageName, 0);
+                            ClassLoader classLoader = context.getClassLoader();
+                            String processName = getProcessName(context);
+
+                            if (processName == null) {
+                                Log.e(TAG, "Process name null, abort");
+                                return;
+                            }
+
+                            Log.d(TAG, "Activating module for package: " + packageName + " in process: " + processName);
+
+                            PineXposed.onPackageLoad(
+                                    packageName,
+                                    processName,
+                                    appInfo,
+                                    false,
+                                    classLoader
+                            );
+
+                        } catch (PackageManager.NameNotFoundException e) {
+                            Log.e(TAG, "Failed to activate module", e);
                         }
-
-                        Log.d(TAG, "Activating module for package: " + packageName + " in process: " + processName);
-
-                        PineXposed.onPackageLoad(packageName, processName, appInfo, false, classLoader);
-
-                    } catch (PackageManager.NameNotFoundException e) {
-                        Log.e(TAG, "Failed to get ApplicationInfo, cannot activate module.", e);
                     }
                 }
             }
+        } catch (Throwable e) {
+            Log.w(TAG, "Failed to load embedded modules", e);
         }
     }
 
@@ -193,34 +217,6 @@ public class Hook {
             }
         }
         return null;
-    }
-
-    private static String[] getApkFiles(Context context) {
-        String resourcePath = "hook/modules.txt";
-        List<String> apkFiles = new ArrayList<>();
-
-        try {
-            InputStream inputStream = context.getClassLoader().getResourceAsStream(resourcePath);
-            if (inputStream == null) {
-                Log.w(TAG, "Resource file not found: " + resourcePath);
-                return apkFiles.toArray(new String[0]);
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("#")) {
-                        continue;
-                    }
-                    if (line.endsWith(".apk")) {
-                        apkFiles.add(line);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            Log.w(TAG, "Could not read resource file: " + resourcePath, e);
-        }
-        return apkFiles.toArray(new String[0]);
     }
 
     private static void handleBeforeCall(Pine.CallFrame callFrame, Map<String, Object> methodDetails) {

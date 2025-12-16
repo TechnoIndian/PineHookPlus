@@ -1,7 +1,5 @@
 package com.pinehook.plus;
 
-import androidx.annotation.NonNull;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -36,7 +34,6 @@ public class JsonParser {
         return config;
     }
 
-    @NonNull
     private static Map<String, Object> parseJsonObjectToMap(JSONObject jsonObject) throws JSONException {
         Map<String, Object> map = new HashMap<>();
         Iterator<String> keys = jsonObject.keys();
